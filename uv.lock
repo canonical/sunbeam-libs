@@ -339,7 +339,7 @@ wheels = [
 
 [[package]]
 name = "sunbeam-ndr-contract"
-version = "0.1.0"
+version = "2027.1.0.dev0"
 source = { editable = "packages/ndr-contract" }
 
 [package.dev-dependencies]

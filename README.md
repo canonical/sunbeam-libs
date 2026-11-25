@@ -27,3 +27,44 @@ uv build --package sunbeam-ndr-contract --no-sources --out-dir dist/ndr-contract
 CI tests the installed wheel on both Python versions and stores the build
 artifacts by package and Python version. Package versions are independent of
 wire contract versions.
+
+## Versioning
+
+Each package uses `YEAR.CYCLE.PATCH` for the Sunbeam release line it
+supports. A package can ship a compatible update independently by
+incrementing its patch number. Use package-specific tags of the form
+`<package-directory>/v<version>`.
+
+For `sunbeam-ndr-contract`, development starts at `2027.1.0.dev0` for
+the April 2027 release. The final version is `2027.1.0`, followed by
+compatible updates such as `2027.1.1`. When work on the next release line
+starts in May, use `2027.2.0.dev0` for that work. The NDR wire contract
+version is maintained separately.
+
+### Release a beta
+
+Set the package version to `2027.1.0b1` and build its wheel and source
+distribution. `uv version` updates the package metadata and workspace lockfile.
+
+```sh
+uv version --package sunbeam-ndr-contract --no-sync 2027.1.0b1
+uv lock --check
+uv build --package sunbeam-ndr-contract --no-sources \
+    --out-dir dist/ndr-contract/2027.1.0b1
+```
+
+Commit the version and lockfile changes. After the Python 3.12 and 3.14
+checks pass, create a signed tag on that commit.
+
+```sh
+git tag -s ndr-contract/v2027.1.0b1 -m "NDR contract 2027.1.0b1"
+```
+
+To distribute the beta before a package index is configured, share the
+wheel or pin the tagged Git revision. Once publishing to PyPI is
+configured, upload the wheel and source distribution from the tagged
+commit. Consumers can opt into the published beta with the exact
+requirement `sunbeam-ndr-contract==2027.1.0b1`.
+
+For another beta use `2027.1.0b2`. For the final release use `2027.1.0`
+and follow the same build and tag steps.

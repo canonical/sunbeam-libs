@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sunbeam-ndr-contract"
-version = "0.1.0"
+version = "2027.1.0.dev0"
 description = "Placement contract for Neutron Dynamic Routing in Sunbeam"
 readme = "README.md"
 requires-python = ">=3.12"
