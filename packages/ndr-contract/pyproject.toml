@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 - Canonical Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sunbeam-ndr-contract"
+version = "0.1.0"
+description = "Placement contract for Neutron Dynamic Routing in Sunbeam"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+
+[dependency-groups]
+dev = ["mypy", "pytest", "ruff"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+[tool.setuptools.package-data]
+sunbeam_ndr_contract = ["py.typed"]
