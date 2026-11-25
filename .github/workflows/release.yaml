@@ -1,0 +1,98 @@
+name: Publish Python package
+
+on:
+  push:
+    tags:
+      - "ndr-contract/v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build NDR distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.18"
+          python-version: "3.12"
+
+      - name: Check the release tag and build
+        shell: bash
+        run: |
+          release_tag='^ndr-contract/v[0-9]{4}\.[1-9][0-9]*\.(0|[1-9][0-9]*)((a|b|rc)[1-9][0-9]*|\.dev(0|[1-9][0-9]*))?$'
+          if [[ ! "$GITHUB_REF_NAME" =~ $release_tag ]]; then
+            echo "Expected an NDR contract release tag such as ndr-contract/v2027.1.0.dev0 or ndr-contract/v2027.1.0b1."
+            exit 1
+          fi
+          package_version=$(uv version --package sunbeam-ndr-contract --short)
+          if [[ "$GITHUB_REF_NAME" != "ndr-contract/v$package_version" ]]; then
+            echo "Release tag does not match the NDR package version $package_version."
+            exit 1
+          fi
+          uv lock --check
+          uv build --package sunbeam-ndr-contract --no-sources --out-dir dist/ndr-contract
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ndr-contract-distributions
+          path: |
+            dist/ndr-contract/*.whl
+            dist/ndr-contract/*.tar.gz
+          if-no-files-found: error
+
+  test:
+    name: Test NDR wheel on Python ${{ matrix.python }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.18"
+          python-version: ${{ matrix.python }}
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ndr-contract-distributions
+          path: dist/ndr-contract
+
+      - name: Test the wheel and source distribution
+        run: |
+          uv sync --locked --package sunbeam-ndr-contract --only-dev
+          uv pip install --python .venv/bin/python --no-deps dist/ndr-contract/*.whl
+          .venv/bin/python -m pytest --import-mode=importlib packages/ndr-contract/tests
+          uv run --no-project --isolated --with dist/ndr-contract/*.tar.gz \
+            python -c 'import sunbeam_ndr_contract'
+
+  publish:
+    name: Publish NDR contract to PyPI
+    if: github.repository == 'canonical/sunbeam-libs'
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi-ndr-contract
+      url: https://pypi.org/project/sunbeam-ndr-contract/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ndr-contract-distributions
+          path: dist/ndr-contract
+
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist/ndr-contract/

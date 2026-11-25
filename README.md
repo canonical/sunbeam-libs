@@ -54,17 +54,38 @@ uv build --package sunbeam-ndr-contract --no-sources \
 ```
 
 Commit the version and lockfile changes. After the Python 3.12 and 3.14
-checks pass, create a signed tag on that commit.
+checks pass, create a signed tag on the release commit and push that tag
+to the canonical repository.
 
 ```sh
 git tag -s ndr-contract/v2027.1.0b1 -m "NDR contract 2027.1.0b1"
+git push origin refs/tags/ndr-contract/v2027.1.0b1
 ```
 
-To distribute the beta before a package index is configured, share the
-wheel or pin the tagged Git revision. Once publishing to PyPI is
-configured, upload the wheel and source distribution from the tagged
-commit. Consumers can opt into the published beta with the exact
-requirement `sunbeam-ndr-contract==2027.1.0b1`.
+The [release workflow](.github/workflows/release.yaml) checks the tag
+against the package version, builds the distributions, and tests them
+on both Python versions. The publish job uploads those artifacts to
+PyPI through the `pypi-ndr-contract` GitHub environment.
+
+Configure PyPI Trusted Publishing for `canonical/sunbeam-libs` with
+workflow filename `release.yaml` and environment `pypi-ndr-contract`.
+The GitHub environment must allow `ndr-contract/v*` release tags.
+Consumers can opt into the published beta with the exact requirement
+`sunbeam-ndr-contract==2027.1.0b1`.
 
 For another beta use `2027.1.0b2`. For the final release use `2027.1.0`
 and follow the same build and tag steps.
+
+### Publish a development release
+
+If the package metadata already reads `2027.1.0.dev0`, tag the commit containing
+the package version and release workflow, then push that tag.
+
+```sh
+git tag -s ndr-contract/v2027.1.0.dev0 -m "NDR contract 2027.1.0.dev0"
+git push origin refs/tags/ndr-contract/v2027.1.0.dev0
+```
+
+The release workflow builds, tests, and publishes the development version.
+Consumers can opt in with `sunbeam-ndr-contract==2027.1.0.dev0`. Use
+`2027.1.0.dev1` for the next development upload.
